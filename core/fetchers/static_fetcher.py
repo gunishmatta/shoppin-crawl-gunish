@@ -2,6 +2,8 @@ import aiohttp
 from .base_fetcher import BaseFetcher
 
 class StaticContentFetcher(BaseFetcher):
+
+
     async def fetch_content(self, url: str) -> str:
         """Fetch static content."""
         try:

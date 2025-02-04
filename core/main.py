@@ -1,4 +1,5 @@
 import asyncio
+
 from core.service.crawl_service import CrawlerService
 
 DOMAINS = [
