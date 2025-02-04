@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import Mock, AsyncMock, patch
-from bs4 import BeautifulSoup
 
 from core.config import Config
 from core.fetchers import DynamicContentFetcher
