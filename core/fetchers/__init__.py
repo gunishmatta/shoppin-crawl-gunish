@@ -11,9 +11,7 @@ class FetcherFactory:
     @staticmethod
     def get_fetcher(url: str) -> BaseFetcher:
         """Return appropriate fetcher based on page type."""
-        if asyncio.get_event_loop().is_running():
-            return DynamicContentFetcher()
-        if FetcherFactory.is_dynamic_page(url):
+        if await FetcherFactory.is_dynamic_page(url):
             return DynamicContentFetcher()
         return StaticContentFetcher()
 

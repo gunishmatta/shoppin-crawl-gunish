@@ -7,19 +7,21 @@ This project provides an asynchronous web crawling service to extract product UR
 * Asynchronous and scalable crawling of multiple domains
 * Handles dynamic web pages using Selenium
 * Extracts product URLs using configurable patterns
-* Supports domain input via command line arguments or JSON/text files
 * Next-page navigation strategies for deep crawling
 * Error handling and retry logic for failed fetches
 * Observer pattern for real-time logging
+* Served Via Rest APIs (FastAPI)
 
 ## Tech Stack
 
 * Python 3.8+
-* `asyncio`
-* `aiohttp`
-* `BeautifulSoup`
-* `Selenium`
-* `uvloop` for enhanced async I/O performance
+* `asyncio` - Async IO stuff
+* `aiohttp` - async HTTP Requests
+* `BeautifulSoup` - Parse HTML content
+* `Selenium` - Browser Automation (Chrome)
+* `Redis` as a Message Broker and Result Backend for Dramatiq
+* `Dramatiq` - Workers
+* `FastAPI` - Serving APIs
 * Observer pattern for logging and notifications
 
 ## Getting Started
@@ -45,29 +47,45 @@ Install Selenium Chrome driver:
 pip install selenium
 ```
 
-Usage
-Command Line Arguments
+To run this project locally, you have two options: Docker-based or a local setup.
+
+Docker-based (Linux, Windows, Non-Apple Silicon as we are using a docker image which includes chrome by default but not works on Silicon macs as of now).
+
+This method uses Docker and Docker Compose, ensuring a consistent environment. Make sure you have both Docker and Docker Compose installed.
+
+Navigate to the project's root directory in your terminal.
+Run the following command:
+```bash
+docker-compose up -d --build
+```
+This command will build the Docker image (if necessary) and start the containers in detached mode (running in the background).
+
+Local Setup (Non-Docker) (Works for Silicon Macs for now) 
+This method requires you to install and manage the dependencies yourself.
+```bash
+pip install -r requirements.txt. 
+```
+Install Redis: Use your preferred method to install Redis. For macOS, you can use Homebrew:
+```bash
+brew install redis
+```
+Run Redis: Start the Redis server.
 
 ```bash
-python crawl_service.py <domains> [--file <file_path>]
+sudo brew services start redis
 ```
-Examples
 
-Directly Passing Domains:
-
+Run the Worker: In a terminal, execute the following command to start the Dramatiq worker:
+```bash 
+dramatiq core.main
+```
+Run the Main App: Open a separate terminal and run the main application using Uvicorn:
 ```bash
-python crawl_service.py example.com example.org
+uvicorn core.main:app --reload --port 8000
 ```
-Using a File:
+The --reload flag will automatically restart the server when you make code changes, and --port 8088 specifies the port to use.
 
-```bash
-python crawl_service.py --file domains.json
-```
-Example JSON file content:
-
-```json
- ["example.com", "example.org"]
- ```
+Access the API Documentation: Open your web browser and go to http://localhost:8000/docs to access the Swagger UI and interact with the API.
 
 Configuration
 The patterns for extracting product URLs can be customized in the Config.DEFAULT_PRODUCT_PATTERNS.
@@ -87,7 +105,7 @@ DEFAULT_PRODUCT_PATTERNS = [
 
 **Overview**
 
-Main Module: Entry point to the entire crawling process.
+Main Module: Entry point to the entire crawling process + REST APIs.
 
 CrawlerService: Manages concurrent crawling tasks.
 
@@ -103,5 +121,4 @@ Error Handling
 
 
 Future Improvements
-* Persistent storage integration for crawl results
-* Use a more sophisticated worker for workloads like Celery
+* Use docker base image which includes chrome and works on Silicon Macs too
