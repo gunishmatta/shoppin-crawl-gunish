@@ -55,7 +55,7 @@ class CrawlerService:
         if domain not in self.domain_semaphores:
             self.domain_semaphores[domain] = asyncio.Semaphore(50)
 
-        fetcher = FetcherFactory.get_fetcher(domain)
+        fetcher = await FetcherFactory.get_fetcher(domain)
         product_urls = set()
         visited_urls = set()
         await self.crawl_page(domain, domain, visited_urls, product_urls, fetcher)

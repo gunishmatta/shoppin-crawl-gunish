@@ -9,9 +9,9 @@ from ..config import Config
 
 class FetcherFactory:
     @staticmethod
-    def get_fetcher(url: str) -> BaseFetcher:
+    async def get_fetcher(url: str) -> BaseFetcher:
         """Return appropriate fetcher based on page type."""
-        if await FetcherFactory.is_dynamic_page(url):
+        if FetcherFactory.is_dynamic_page(url):
             return DynamicContentFetcher()
         return StaticContentFetcher()
 
