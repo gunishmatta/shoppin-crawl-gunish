@@ -1,21 +1,21 @@
 import asyncio
 import logging
 import re
-import time
 from typing import Optional, Set
 from urllib.parse import urljoin, urlparse, urlunparse
 
-from core.config import Config
 
 from aiohttp import ClientSession, ClientTimeout
 from bs4 import BeautifulSoup
 
+from core.config import Config
 from core.fetchers import FetcherFactory
 from core.observer import Subject, LoggerObserver
+from core.retry import retry
 from core.utils import _find_next_page_by_query_parameter, _find_next_page_from_sibling_navigation, \
     _find_next_page_from_text_or_aria_label, _find_next_page_from_button_class, _find_next_page_from_seo_hint
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class CrawlerService:
     def __init__(self):
@@ -24,7 +24,7 @@ class CrawlerService:
         self.subject = Subject()
         self.subject.attach(LoggerObserver())
         self.domain_semaphores = {}
-        self.sem = asyncio.Semaphore(100)
+        self.sem = asyncio.Semaphore(500)
 
 
     async def crawl_all_domains(self, domains):
@@ -58,12 +58,11 @@ class CrawlerService:
         fetcher = FetcherFactory.get_fetcher(domain)
         product_urls = set()
         visited_urls = set()
-        initial_url = f"https://{domain}"
-
-        await self.crawl_page(domain, initial_url, visited_urls, product_urls, fetcher)
+        await self.crawl_page(domain, domain, visited_urls, product_urls, fetcher)
         self.subject.notify(f"Finished crawling {domain}. Found {len(product_urls)} product URLs.")
         return list(product_urls)
 
+    @retry(max_retries=3, delay=2)
     async def crawl_page(self, domain: str, url: str, visited_urls: set, product_urls: set, fetcher):
         """
         Crawl a single page and extract product URLs.
@@ -76,10 +75,8 @@ class CrawlerService:
         if not content:
             self.subject.notify(f"No content found for URL: {url}")
             return
-
         urls = await self.extract_product_urls(domain, content)
         product_urls.update(urls)
-
         next_page_url = self.get_next_page_url(domain, content)
         if next_page_url:
             self.subject.notify(f"Found next page: {next_page_url}")
@@ -90,7 +87,6 @@ class CrawlerService:
         Extracts the URL of the next page from the given HTML content.
         """
         soup = BeautifulSoup(content, 'html.parser')
-
         strategies = [
             _find_next_page_from_seo_hint,
             _find_next_page_from_button_class,
@@ -98,7 +94,6 @@ class CrawlerService:
             _find_next_page_from_sibling_navigation,
             _find_next_page_by_query_parameter,
         ]
-
         for strategy in strategies:
             next_page_url = strategy(soup) if 'soup' in strategy.__code__.co_varnames else strategy(base_url)
             if next_page_url:
@@ -143,6 +138,7 @@ class CrawlerService:
             valid_urls.update(urls)
         return valid_urls
 
+    @retry(max_retries=3, delay=2)
     async def validate_url(self, session: ClientSession, url: str) -> bool:
         """Validate if the URL is accessible and returns status code 200."""
         try:

@@ -1,0 +1,28 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8086"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+    command: uvicorn core.main:app --reload --workers 1 --host 0.0.0.0 --port 8086
+
+  worker:
+    build: .
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+    command: dramatiq core.main
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

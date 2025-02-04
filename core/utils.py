@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+from urllib.parse import parse_qs, urlparse, urlencode, urlunparse
 
 from bs4 import BeautifulSoup
 
@@ -30,9 +31,9 @@ def _find_next_page_from_sibling_navigation(soup: BeautifulSoup) -> Optional[str
 
 
 def _find_next_page_by_query_parameter(base_url: str) -> Optional[str]:
-    match = re.search(r'(page=)(\d+)', base_url)
+    match = re.search(r'[?&]page=(\d+)', base_url)
     if match:
-        current_page = int(match.group(2))
+        current_page = int(match.group(1))
         next_page = current_page + 1
-        return re.sub(r'(page=)\d+', f'page={next_page}', base_url)
+        return re.sub(r'([?&])page=\d+', f'\\1page={next_page}', base_url)
     return None

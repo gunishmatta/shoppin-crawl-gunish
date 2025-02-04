@@ -1,0 +1,5 @@
+[
+    "www.flipkart.com/search?q=washing+machine&as=on&as-show=on",
+    "www.shoppersstop.com/beauty-skincare-cleanser-toners/c-B102020",
+    "www.ajio.com/s/bakeware-4720-51871"
+]
